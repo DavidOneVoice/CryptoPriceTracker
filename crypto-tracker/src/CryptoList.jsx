@@ -11,112 +11,68 @@ const CryptoList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const prevPricesRef = useRef({});
 
-  // Fetch all coins
+  // Fetch main coin list using CoinGecko
   useEffect(() => {
     const fetchCoins = async () => {
       try {
         const response = await axios.get(
-          "https://coinranking1.p.rapidapi.com/coins",
+          "https://api.coingecko.com/api/v3/coins/markets",
           {
-            headers: {
-              "X-RapidAPI-Key":
-                "0f9356c3cemsh261eaa5adabb825p1342b2jsnd29d75618110",
-              "X-RapidAPI-Host": "coinranking1.p.rapidapi.com",
+            params: {
+              vs_currency: "usd",
+              order: "market_cap_desc",
+              per_page: 250,
+              page: 1,
+              sparkline: true,
             },
           }
         );
 
-        const allCoins = response.data.data.coins;
+        const allCoins = response.data;
 
-        // Optional: keep popular symbols at the top
-        const popularSymbols = [
-          "BTC",
-          "ETH",
-          "USDT",
-          "LTC",
-          "BNB",
-          "SOL",
-          "DOGE",
-          "MATIC",
-          "TRX",
-          "USDC",
-          "BUSD",
-          "BCH",
-        ];
-
-        const sortedCoins = [
-          ...allCoins.filter((c) => popularSymbols.includes(c.symbol)), // favorites
-          ...allCoins.filter((c) => !popularSymbols.includes(c.symbol)), // rest
-        ];
-
-        setCoins(sortedCoins);
+        setCoins(allCoins);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching coins:", err);
       }
     };
 
     fetchCoins();
   }, []);
 
-  // Fetch coin details
+  // Fetch individual coin description
   const fetchAdditionalData = async (coin) => {
     try {
-      const response = await axios.get(
-        `https://coinranking1.p.rapidapi.com/coin/${coin.uuid}`,
-        {
-          params: { referenceCurrencyUuid: "yhjMzLPhuIDl" },
-          headers: {
-            "X-RapidAPI-Key":
-              "0f9356c3cemsh261eaa5adabb825p1342b2jsnd29d75618110",
-            "X-RapidAPI-Host": "coinranking1.p.rapidapi.com",
-          },
-        }
+      const res = await axios.get(
+        `https://api.coingecko.com/api/v3/coins/${coin.id}`
       );
-
-      const data = response.data.data.coin;
+      const data = res.data;
 
       return {
         ...coin,
-        marketCap: data.marketCap || "N/A",
-        volume24h: data["24hVolume"] || "N/A",
-        change24h: data.change || "N/A",
-        allTimeHigh: data.allTimeHigh?.price || "N/A",
-        circulatingSupply: data.supply?.circulating || "N/A",
-        totalSupply: data.supply?.total || "N/A",
-        price: data.price || "N/A",
-        description: data.description || "No description available.",
-        iconUrl: data.iconUrl,
-        coinrankingUrl: data.coinrankingUrl,
-        sparkline: data.sparkline || [],
+        description: data.description.en || "No description available.",
       };
     } catch (err) {
-      console.error(err);
-      return {
-        ...coin,
-        marketCap: "N/A",
-        volume24h: "N/A",
-        change24h: "N/A",
-        allTimeHigh: "N/A",
-        circulatingSupply: "N/A",
-        totalSupply: "N/A",
-        price: "N/A",
-        description: "No description available.",
-        sparkline: [],
-      };
+      return { ...coin, description: "No description available." };
     }
   };
 
-  // Fetch details and refresh every 10s
+  // Refreshing every 10 seconds
   useEffect(() => {
-    const fetchAllDetails = async () => {
+    const loadDetails = async () => {
       const details = await Promise.all(coins.map(fetchAdditionalData));
       setDetailedCoins(details);
-      details.forEach((c) => (prevPricesRef.current[c.uuid] = c.price));
+
+      details.forEach((coin) => {
+        prevPricesRef.current[coin.id] = coin.current_price;
+      });
     };
-    if (coins.length) fetchAllDetails();
+
+    if (coins.length) loadDetails();
+
     const interval = setInterval(() => {
-      if (coins.length) fetchAllDetails();
+      if (coins.length) loadDetails();
     }, 10000);
+
     return () => clearInterval(interval);
   }, [coins]);
 
@@ -129,16 +85,15 @@ const CryptoList = () => {
   );
 
   const getPriceChangeClass = (coin) => {
-    const prevPrice = prevPricesRef.current[coin.uuid];
-    if (!prevPrice || prevPrice === coin.price) return "";
-    return Number(coin.price) > Number(prevPrice) ? "price-up" : "price-down";
+    const prev = prevPricesRef.current[coin.id];
+    if (!prev) return "";
+    return coin.current_price > prev ? "price-up" : "price-down";
   };
 
   return (
     <div
       className={`app-container ${isDarkTheme ? "dark-theme" : "light-theme"}`}
     >
-      {/* Header */}
       <header className="app-header">
         <h1>Crypto Tracker</h1>
         <button className="theme-toggle" onClick={toggleTheme}>
@@ -146,7 +101,6 @@ const CryptoList = () => {
         </button>
       </header>
 
-      {/* Search */}
       <div className="search-bar">
         <input
           type="text"
@@ -156,70 +110,54 @@ const CryptoList = () => {
         />
       </div>
 
-      {/* Coin List */}
       <main className="main-content">
         {filteredCoins.map((crypto) => (
-          <div key={crypto.uuid} className="coin-card">
+          <div key={crypto.id} className="coin-card">
             <div className="coin-top">
-              <img src={crypto.iconUrl} alt={crypto.name} />
+              <img src={crypto.image} alt={crypto.name} />
               <h2>
-                {crypto.name} ({crypto.symbol})
+                {crypto.name} ({crypto.symbol.toUpperCase()})
               </h2>
             </div>
 
             <div className="coin-prices">
               <p className={`price ${getPriceChangeClass(crypto)}`}>
-                Price: $
-                {crypto.price !== "N/A"
-                  ? Number(crypto.price).toLocaleString()
-                  : crypto.price}
+                Price: ${crypto.current_price.toLocaleString()}
               </p>
-              <p>24h Change: {crypto.change24h}%</p>
-              <p>
-                Market Cap:{" "}
-                {crypto.marketCap !== "N/A"
-                  ? Number(crypto.marketCap).toLocaleString()
-                  : crypto.marketCap}
-              </p>
+              <p>24h Change: {crypto.price_change_percentage_24h}%</p>
+              <p>Market Cap: ${crypto.market_cap.toLocaleString()}</p>
             </div>
 
-            {crypto.sparkline.length > 0 && (
-              <Sparklines data={crypto.sparkline} svgWidth={200} svgHeight={50}>
+            {crypto.sparkline_in_7d?.price?.length > 0 && (
+              <Sparklines
+                data={crypto.sparkline_in_7d.price}
+                svgWidth={200}
+                svgHeight={50}
+              >
                 <SparklinesLine
-                  color={crypto.change24h >= 0 ? "#00ff88" : "#ff5555"}
+                  color={
+                    crypto.price_change_percentage_24h >= 0
+                      ? "#00ff88"
+                      : "#ff5555"
+                  }
                 />
               </Sparklines>
             )}
 
             <details>
               <summary>More Info</summary>
-              <p>{crypto.description}</p>
-              <p>All-Time High: ${crypto.allTimeHigh}</p>
+              <p dangerouslySetInnerHTML={{ __html: crypto.description }} />
+              <p>All-Time High: ${crypto.ath}</p>
               <p>
                 Circulating Supply:{" "}
-                {crypto.circulatingSupply !== "N/A"
-                  ? Number(crypto.circulatingSupply).toLocaleString()
-                  : crypto.circulatingSupply}
+                {crypto.circulating_supply?.toLocaleString()}
               </p>
-              <p>
-                Total Supply:{" "}
-                {crypto.totalSupply !== "N/A"
-                  ? Number(crypto.totalSupply).toLocaleString()
-                  : crypto.totalSupply}
-              </p>
-              <a
-                href={crypto.coinrankingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                View on CoinRanking
-              </a>
+              <p>Total Supply: {crypto.total_supply?.toLocaleString()}</p>
             </details>
           </div>
         ))}
       </main>
 
-      {/* Bottom Navigation */}
       <nav className="bottom-nav">
         {["home", "markets", "watchlist", "settings"].map((tab) => (
           <button
