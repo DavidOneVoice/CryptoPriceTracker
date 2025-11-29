@@ -5,13 +5,12 @@ import "./App.css";
 
 const CryptoList = () => {
   const [coins, setCoins] = useState([]);
-  const [detailedCoins, setDetailedCoins] = useState([]);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [activeTab, setActiveTab] = useState("markets");
   const [searchTerm, setSearchTerm] = useState("");
   const prevPricesRef = useRef({});
 
-  // Fetch main coin list using CoinGecko
+  // Fetch ONLY markets data (safe, CORS supported)
   useEffect(() => {
     const fetchCoins = async () => {
       try {
@@ -28,57 +27,27 @@ const CryptoList = () => {
           }
         );
 
-        const allCoins = response.data;
+        setCoins(response.data);
 
-        setCoins(allCoins);
+        // Save prices for blinking animation
+        response.data.forEach((coin) => {
+          prevPricesRef.current[coin.id] = coin.current_price;
+        });
       } catch (err) {
         console.error("Error fetching coins:", err);
       }
     };
 
     fetchCoins();
-  }, []);
 
-  // Fetch individual coin description
-  const fetchAdditionalData = async (coin) => {
-    try {
-      const res = await axios.get(
-        `https://api.coingecko.com/api/v3/coins/${coin.id}`
-      );
-      const data = res.data;
-
-      return {
-        ...coin,
-        description: data.description.en || "No description available.",
-      };
-    } catch (err) {
-      return { ...coin, description: "No description available." };
-    }
-  };
-
-  // Refreshing every 10 seconds
-  useEffect(() => {
-    const loadDetails = async () => {
-      const details = await Promise.all(coins.map(fetchAdditionalData));
-      setDetailedCoins(details);
-
-      details.forEach((coin) => {
-        prevPricesRef.current[coin.id] = coin.current_price;
-      });
-    };
-
-    if (coins.length) loadDetails();
-
-    const interval = setInterval(() => {
-      if (coins.length) loadDetails();
-    }, 10000);
-
+    // Auto refresh
+    const interval = setInterval(fetchCoins, 10000);
     return () => clearInterval(interval);
-  }, [coins]);
+  }, []);
 
   const toggleTheme = () => setIsDarkTheme((prev) => !prev);
 
-  const filteredCoins = detailedCoins.filter(
+  const filteredCoins = coins.filter(
     (coin) =>
       coin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       coin.symbol.toLowerCase().includes(searchTerm.toLowerCase())
@@ -146,7 +115,6 @@ const CryptoList = () => {
 
             <details>
               <summary>More Info</summary>
-              <p dangerouslySetInnerHTML={{ __html: crypto.description }} />
               <p>All-Time High: ${crypto.ath}</p>
               <p>
                 Circulating Supply:{" "}
