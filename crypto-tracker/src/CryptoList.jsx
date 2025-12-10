@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Sparklines, SparklinesLine } from "react-sparklines";
-import { db, auth } from "./firebase";
+import { db, auth } from "./Firebase";
 import { signOut } from "firebase/auth";
 import AuthForm from "./AuthForm";
 import { doc, getDoc, setDoc } from "firebase/firestore";
