@@ -1,0 +1,128 @@
+/* AuthForm.css */
+
+/* Container */
+.auth-container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 30px;
+  border-radius: 10px;
+  margin-top: 6rem;
+  background-color: #000;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-family: Arial, sans-serif;
+}
+
+.auth-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Form inputs */
+.auth-form input {
+  width: 100%;
+  padding: 12px 12px 12px 12px; /* remove right padding, will handle in wrapper */
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+/* Password wrapper */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px; /* space for the eye icon */
+}
+
+/* Password toggle icon */
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  bottom: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffa500;
+  font-size: 20px;
+}
+
+/* Submit button */
+.auth-form button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  background-color: #ffa500;
+  color: #000;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background-color 0.3s;
+}
+
+.auth-form button[type="submit"]:hover {
+  background-color: #00cc66;
+}
+
+/* Error and reset messages */
+.auth-error,
+.reset-message {
+  color: #ff5555;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.reset-message {
+  color: #00ff88;
+}
+
+/* Forgot password link */
+.password-reset {
+  color: #ffa500;
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 15px;
+  text-decoration: underline;
+  text-align: center;
+}
+
+/* Toggle between login/signup */
+.toggle-text {
+  font-size: 13px;
+  text-align: center;
+}
+
+.toggle-link {
+  color: #ffa500;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.toggle-link:hover {
+  text-decoration: underline;
+}
+
+/* Logout button */
+.logout-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background-color: #ff5555;
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background-color: #cc4444;
+}

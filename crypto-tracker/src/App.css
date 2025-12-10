@@ -10,7 +10,6 @@ body,
 html,
 #root {
   height: 100%;
-  background-color: #0f0f0f;
 }
 
 /* App Container */
@@ -20,6 +19,7 @@ html,
   height: 100vh;
   overflow: hidden;
   transition: background-color 0.3s ease;
+  position: relative; /* needed for overlay */
 }
 
 /* Dark & Light Themes */
@@ -30,7 +30,7 @@ html,
 
 .light-theme {
   background-color: #f5f5f5;
-  color: #fff;
+  color: #111;
 }
 
 /* Header */
@@ -39,13 +39,12 @@ html,
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  background: linear-gradient(90deg, #1f1f1f, #272727);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   border-bottom-left-radius: 20px;
   border-bottom-right-radius: 20px;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 20;
   transition: background 0.3s ease;
 }
 
@@ -66,9 +65,21 @@ html,
   transform: scale(1.2);
 }
 
+/* small header spinner */
+.small-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #00ff88;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
 /* Search Bar */
 .search-bar {
   padding: 0.5rem 1.5rem;
+  background: transparent;
+  z-index: 15;
 }
 
 .search-bar input {
@@ -94,11 +105,48 @@ html,
   flex-direction: column;
   gap: 1rem;
   scroll-behavior: smooth;
+  position: relative; /* overlay anchor */
+  padding-bottom: 90px; /* leave space for fixed bottom nav */
+}
+
+/* Loading overlay (absolute so it doesn't shift layout) */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+  background: rgba(0, 0, 0, 0.35); /* subtle dim */
+  border-radius: 12px;
+}
+
+.loading-container {
+  text-align: center;
+  padding: 20px 30px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 12px;
+  color: #fff;
+}
+
+.spinner {
+  margin: 0 auto 12px auto;
+  width: 40px;
+  height: 40px;
+  border: 4px solid #ccc;
+  border-top-color: #00ff88;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Coin Card */
 .coin-card {
-  background: linear-gradient(145deg, #1a1a1a, #222);
   border-radius: 20px;
   padding: 1rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -107,11 +155,12 @@ html,
   flex-direction: column;
   gap: 0.5rem;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  border-bottom: 2px solid white;
 }
 
 .coin-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(255, 165, 0, 0.3);
+  box-shadow: 0 10px 20px rgba(255, 165, 0, 0.2);
 }
 
 .coin-top {
@@ -129,6 +178,25 @@ html,
 .coin-top h2 {
   font-size: 1rem;
   font-weight: 600;
+}
+
+/* Watch button */
+.watch-btn {
+  align-self: flex-start;
+  margin-top: -20px;
+  margin-bottom: 8px;
+  background: transparent;
+  border: 1px solid #ffda6a;
+  padding: 6px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.watch-btn.on {
+  background: rgba(255, 217, 102, 0.12);
+  color: #ffda6a;
+  border-color: rgba(255, 217, 102, 0.25);
 }
 
 /* Coin Prices */
@@ -177,13 +245,12 @@ details a {
   justify-content: space-around;
   align-items: center;
   padding: 0.6rem 0;
-  background: linear-gradient(90deg, #1f1f1f, #272727);
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
-  position: sticky;
+  position: fixed;
   bottom: 0;
-  z-index: 10;
+  left: 0;
+  right: 0;
+  z-index: 30;
 }
 
 .bottom-nav button {
@@ -200,7 +267,7 @@ details a {
 }
 
 .bottom-nav button.active {
-  color: #ffa500;
+  color: #000;
   transform: scale(1.1);
 }
 
@@ -226,6 +293,34 @@ details a {
 .price-down {
   color: #ff5555;
   animation: flash-red 1s ease;
+}
+
+.toast-alert {
+  position: fixed;
+  top: 50px; /* above bottom nav */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000;
+  color: #fff;
+  width: 90%;
+  padding: 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  animation: toastSlide 0.3s ease-out;
+  z-index: 9999;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes toastSlide {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 @keyframes flash-green {
@@ -261,6 +356,7 @@ details a {
 .coin-card {
   animation: fadeIn 0.5s ease forwards;
 }
+
 /* Responsive Design */
 @media (max-width: 600px) {
   .app-header h1 {
